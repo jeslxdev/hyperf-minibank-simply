@@ -1,0 +1,9 @@
+/.env
+/runtime/
+/var/
+/vendor/
+/.phpunit.cache/
+/.junit/
+/.idea/
+/.phpunit.cache
+/coverage

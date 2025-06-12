@@ -1,0 +1,94 @@
+{
+    "name": "hyperf/hyperf-skeleton",
+    "version": "1.0.0",
+    "type": "project",
+    "keywords": [
+        "php",
+        "swoole",
+        "framework",
+        "hyperf",
+        "microservice",
+        "middleware"
+    ],
+    "description": "Backend For API REST BANK",
+    "require": {
+        "php": ">=8.1",
+        "firebase/php-jwt": "^6.11",
+        "hyperf/cache": "~3.1.0",
+        "hyperf/command": "~3.1.0",
+        "hyperf/config": "~3.1.0",
+        "hyperf/constants": "~3.1.0",
+        "hyperf/database": "~3.1.0",
+        "hyperf/db-connection": "~3.1.0",
+        "hyperf/elasticsearch": "~3.1.0",
+        "hyperf/engine": "^2.10",
+        "hyperf/framework": "~3.1.0",
+        "hyperf/guzzle": "~3.1.0",
+        "hyperf/http-server": "~3.1.0",
+        "hyperf/logger": "~3.1.0",
+        "hyperf/memory": "~3.1.0",
+        "hyperf/model-cache": "~3.1.0",
+        "hyperf/process": "~3.1.0",
+        "hyperf/swagger": "^3.1",
+        "hyperf/tracer": "~3.1.0",
+        "php-amqplib/php-amqplib": "*",
+        "tigo/documentbr": "^0.0.3",
+        "vlucas/valitron": "^1.4",
+        "zircote/swagger-php": "^4.11"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.24",
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "hyperf/devtool": "~3.1.0",
+        "hyperf/testing": "~3.1.0",
+        "mockery/mockery": "^1.0",
+        "nunomaduro/phpinsights": "^2.13",
+        "phpstan/phpstan": "^1.0",
+        "squizlabs/php_codesniffer": "*",
+        "swoole/ide-helper": "^5.0"
+    },
+    "suggest": {
+        "ext-openssl": "Required to use HTTPS.",
+        "ext-json": "Required to use JSON.",
+        "ext-pdo": "Required to use MySQL Client."
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        },
+        "files": []
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "HyperfTest\\": "./test/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "extra": [],
+    "scripts": {
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "start": [
+            "Composer\\Config::disableProcessTimeout",
+            "php ./bin/hyperf.php start"
+        ],
+        "test": "phpunit",
+        "test:with-coverage": "php -dxdebug.mode=coverage vendor/bin/phpunit --log-juni='.junit/TEST-phpunit-junit.xml' --coverage-clover='./coverage/coverage.xml' --coverage-html=coverage",
+        "test-hyperf": "co-phpunit --prepend test/bootstrap.php -c phpunit.xml --colors=always",
+        "code:insights": "phpinsights -v",
+        "code:insights-ci": "phpinsights --no-interaction --disable-security-check --min-quality=85 --min-complexity=85 --min-architecture=85 --min-style=85",
+        "migrations:create": "php ./bin/hyperf.php gen:migration",
+        "migrations:migrate": "php ./bin/hyperf.php migrate",
+        "migrations:rollback": "php ./bin/hyperf.php migrate:rollback",
+        "migrations:status": "php ./bin/hyperf.php migrate:status"
+    }
+}

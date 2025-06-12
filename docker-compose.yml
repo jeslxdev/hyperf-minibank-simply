@@ -1,0 +1,31 @@
+version: '3.7'
+
+services:
+  php-minibank-hyperf-us:
+    container_name: php-minibank-hyperf-us
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - ./:/opt/www
+    depends_on:
+      - php-minibank-hyperf-db
+    links:
+      - php-minibank-hyperf-db
+  php-minibank-hyperf-db:
+    container_name: php-minibank-hyperf-db
+    image: mysql:8.1
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3306:3306"
+    expose:
+      - "3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "secret"
+      MYSQL_DATABASE: "hyperf"
+
+networks:
+  default:
+    name: php-minibank
