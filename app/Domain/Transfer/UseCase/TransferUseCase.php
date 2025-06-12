@@ -26,7 +26,7 @@ class TransferUseCase
             return [
                 'status' => 'error',
                 'code' => 403,
-                'message' => 'Lojistas não podem enviar transferências.'
+                'message' => 'Lojistas não podem enviar transferências.',
             ];
         }
         return $this->transferService->execute($input);

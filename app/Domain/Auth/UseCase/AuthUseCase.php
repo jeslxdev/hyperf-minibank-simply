@@ -14,14 +14,14 @@ class AuthUseCase
         $email = $data['email'] ?? null;
         $password = $data['password'] ?? null;
         $user = User::where('email', $email)->first();
-        if (!$user || !password_verify($password, $user->password)) {
+        if (! $user || ! password_verify($password, $user->password)) {
             return ['error' => 'Credenciais inválidas'];
         }
         $payload = [
             'sub' => $user->id,
             'email' => $user->email,
             'iat' => time(),
-            'exp' => time() + 3600
+            'exp' => time() + 3600,
         ];
         $jwt = JWT::encode($payload, getenv('JWT_SECRET') ?: 'secret', 'HS256');
         return ['token' => $jwt];

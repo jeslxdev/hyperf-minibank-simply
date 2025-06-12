@@ -6,14 +6,20 @@ namespace App\Middleware;
 
 use Psr\Log\LoggerInterface;
 use Hyperf\Di\Annotation\Inject;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Server\MiddlewareInterface;
 
-class RequestLoggerMiddleware implements \Psr\Http\Server\MiddlewareInterface
+class RequestLoggerMiddleware implements MiddlewareInterface
 {
     #[Inject]
     protected LoggerInterface $logger;
 
-    public function process(\Psr\Http\Message\ServerRequestInterface $request, \Psr\Http\Server\RequestHandlerInterface $handler): \Psr\Http\Message\ResponseInterface
-    {
+    public function process(
+        ServerRequestInterface $request,
+        RequestHandlerInterface $handler
+    ): ResponseInterface {
         $method = $request->getMethod();
         $uri = (string) $request->getUri();
         $body = $request->getParsedBody();

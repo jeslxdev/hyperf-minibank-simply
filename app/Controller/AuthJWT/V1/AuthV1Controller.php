@@ -18,11 +18,12 @@ use Fig\Http\Message\StatusCodeInterface;
 #[Controller('/auth/v1')]
 #[OA\SecurityScheme(securityScheme: 'BearerAuth', type: 'http', scheme: 'bearer', name: 'Authorization', in: 'header')]
 class AuthV1Controller extends AbstractController
-{   
+{
     public function __construct(private AuthUseCase $authUseCase)
     {
         parent::__construct();
     }
+
     #[PostMapping('token')]
     #[OA\Post(
         path: '/auth/v1/token',

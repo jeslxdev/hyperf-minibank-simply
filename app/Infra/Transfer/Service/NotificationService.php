@@ -17,7 +17,8 @@ class NotificationService implements NotificationServiceInterface
             if (in_array($response->getStatusCode(), [200, 204])) {
                 $payee = $payload['payee_name'] ?? $payload['payee'] ?? 'usuário';
                 $value = $payload['value'] ?? 0;
-                $smsMessage = "[SIMULADO] SMS enviado para {$payee}: Você recebeu uma transferência PIX de R$ {$value}.";
+                $smsMessage = "[SIMULADO] SMS enviado para {$payee}: Você recebeu uma transferência PIX de R$ " .
+                    "{$value}.";
                 var_dump(value: $smsMessage);
                 return true;
             }

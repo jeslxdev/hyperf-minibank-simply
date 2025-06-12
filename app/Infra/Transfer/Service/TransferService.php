@@ -22,13 +22,30 @@ class TransferService
         $this->repository->beginTransaction();
         try {
             $jwtUserId = $this->getAuthenticatedUserId();
-            if ($jwtUserId === null || $jwtUserId !== $input->payer) {
+            if (
+                $jwtUserId === null ||
+                $jwtUserId !== $input->payer
+            ) {
                 $this->repository->rollback();
-                return $this->buildResponse('error', 403, 'Usuário autenticado não corresponde ao pagador da transferência.', false, false, $input);
+                return $this->buildResponse(
+                    'error',
+                    403,
+                    'Usuário autenticado não corresponde ao pagador da transferência.',
+                    false,
+                    false,
+                    $input
+                );
             }
             if (! $this->isAuthorized()) {
                 $this->repository->rollback();
-                return $this->buildResponse('reversed', 403, 'Transferência extornada: não autorizada pelo serviço externo.', false, false, $input);
+                return $this->buildResponse(
+                    'reversed',
+                    403,
+                    'Transferência extornada: não autorizada pelo serviço externo.',
+                    false,
+                    false,
+                    $input
+                );
             }
             $this->validateSufficientBalance($input);
             $this->debitPayerWallet($input);
@@ -62,7 +79,10 @@ class TransferService
         }
         $token = substr($authHeader, 7);
         try {
-            $decoded = \Firebase\JWT\JWT::decode($token, new \Firebase\JWT\Key(getenv('JWT_SECRET') ?: 'secret', 'HS256'));
+            $decoded = \Firebase\JWT\JWT::decode(
+                $token,
+                new \Firebase\JWT\Key(getenv('JWT_SECRET') ?: 'secret', 'HS256')
+            );
             return isset($decoded->sub) ? (int) $decoded->sub : null;
         } catch (\Throwable $e) {
             return null;
@@ -108,7 +128,8 @@ class TransferService
         $payeeUser = \App\Model\User::find($input->payee);
         $payeeName = $payeeUser ? $payeeUser->full_name : $input->payee;
         $transferModel->status = 'success';
-        $transferModel->message = "Transferência PIX de R$ {$input->value} para o usuário {$payeeName} realizada com sucesso.";
+        $transferModel->message = 'Transferência PIX de R$ {$input->value} para o usuário {$payeeName} ' .
+            'realizada com sucesso.';
         $transferModel->save();
     }
 
@@ -135,8 +156,14 @@ class TransferService
         $this->repository->commit();
     }
 
-    private function buildResponse(string $status, int $code, string $message, bool $transferred, bool $notified, TransferInput $input): array
-    {
+    private function buildResponse(
+        string $status,
+        int $code,
+        string $message,
+        bool $transferred,
+        bool $notified,
+        TransferInput $input
+    ): array {
         return [
             'status' => $status,
             'code' => $code,

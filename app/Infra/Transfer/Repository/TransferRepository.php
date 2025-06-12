@@ -15,7 +15,7 @@ class TransferRepository implements TransferRepositoryInterface
             'payee_id' => $input->payee,
             'value' => $input->value,
             'status' => 'pending',
-            'message' => null
+            'message' => null,
         ]);
     }
     public function beginTransaction(): void
