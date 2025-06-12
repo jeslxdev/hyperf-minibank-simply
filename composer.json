@@ -41,6 +41,7 @@
         "friendsofphp/php-cs-fixer": "^3.0",
         "hyperf/devtool": "~3.1.0",
         "hyperf/testing": "~3.1.0",
+        "laminas/laminas-diactoros": "^3.6",
         "mockery/mockery": "^1.0",
         "nunomaduro/phpinsights": "^2.13",
         "phpstan/phpstan": "^1.0",

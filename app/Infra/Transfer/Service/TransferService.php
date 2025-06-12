@@ -41,7 +41,6 @@ class TransferService
             ]);
             $this->markTransferSuccess($transferModel, $input);
             $this->repository->commit();
-            var_dump($notified);
             $notifyMsg = $notified ? '' : ' (Atenção: não foi possível notificar o recebedor)';
             return $this->buildResponse('success', 200, $transferModel->message . $notifyMsg, true, $notified, $input);
         } catch (\Throwable $e) {

@@ -11,6 +11,10 @@ use App\Infra\Transfer\Service\TransferService;
 use App\Domain\Transfer\Port\Out\TransferRepositoryInterface;
 use App\Domain\Transfer\Port\Out\AuthorizerServiceInterface;
 use App\Domain\Transfer\Port\Out\NotificationServiceInterface;
+use Firebase\JWT\JWT;
+use Hyperf\Context\Context;
+use Psr\Http\Message\ServerRequestInterface;
+use Laminas\Diactoros\ServerRequest;
 use PHPUnit\Framework\TestCase;
 
 class TransferTest extends TestCase
@@ -49,6 +53,10 @@ class TransferTest extends TestCase
             'payee' => 2,
             'value' => 100.0
         ]);
+        // Gerar JWT válido para o payer
+        $jwt = JWT::encode(['sub' => 1], getenv('JWT_SECRET') ?: 'secret', 'HS256');
+        $request = (new ServerRequest())->withHeader('Authorization', 'Bearer ' . $jwt);
+        Context::set(ServerRequestInterface::class, $request);
         $mockRepo = $this->createMock(TransferRepositoryInterface::class);
         $mockRepo->method('transfer');
         $mockRepo->method('beginTransaction');
@@ -73,6 +81,10 @@ class TransferTest extends TestCase
             'payee' => 2,
             'value' => 100.0
         ]);
+        // Gerar JWT válido para o payer
+        $jwt = JWT::encode(['sub' => 1], getenv('JWT_SECRET') ?: 'secret', 'HS256');
+        $request = (new ServerRequest())->withHeader('Authorization', 'Bearer ' . $jwt);
+        Context::set(ServerRequestInterface::class, $request);
         $mockRepo = $this->createMock(TransferRepositoryInterface::class);
         $mockRepo->method('transfer');
         $mockRepo->method('beginTransaction');
