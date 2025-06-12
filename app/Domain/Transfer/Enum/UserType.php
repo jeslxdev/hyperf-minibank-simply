@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domain\Transfer\Entity;
+namespace App\Domain\Transfer\Enum;
 
 enum UserType: string
 {

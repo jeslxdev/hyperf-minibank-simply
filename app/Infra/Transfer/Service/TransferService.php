@@ -6,19 +6,23 @@ use App\Domain\Transfer\Port\Out\TransferRepositoryInterface;
 use App\Domain\Transfer\InputOutputData\TransferInput;
 use App\Domain\Transfer\Port\Out\AuthorizerServiceInterface;
 use App\Domain\Transfer\Port\Out\NotificationServiceInterface;
-use App\Model\Transfer;
-
+use App\Domain\User\Port\Out\UserRepositoryInterface;
+use App\Domain\Wallet\Port\Out\WalletRepositoryInterface;
+use App\Domain\Transfer\DTO\TransferDTO;
+use App\Domain\Transfer\Entity\Transfer;
 class TransferService
 {
     public function __construct(
         private TransferRepositoryInterface $repository,
         private AuthorizerServiceInterface $authorizer,
-        private NotificationServiceInterface $notifier
+        private NotificationServiceInterface $notifier,
+        private UserRepositoryInterface $userRepository,
+        private WalletRepositoryInterface $walletRepository
     ) {
     }
 
     public function execute(TransferInput $input): array
-    {
+    {   
         $this->repository->beginTransaction();
         try {
             $jwtUserId = $this->getAuthenticatedUserId();
@@ -53,7 +57,7 @@ class TransferService
             $transferModel = $this->createPendingTransfer($input);
             $notified = $this->notifier && $this->notifier->notify([
                 'payee' => $input->payee,
-                'payee_name' => \App\Model\User::find($input->payee)?->full_name,
+                'payee_name' => $this->userRepository->find($input->payee)?->full_name,
                 'value' => $input->value,
             ]);
             $this->markTransferSuccess($transferModel, $input);
@@ -83,6 +87,7 @@ class TransferService
                 $token,
                 new \Firebase\JWT\Key(getenv('JWT_SECRET') ?: 'secret', 'HS256')
             );
+            var_dump($decoded);
             return isset($decoded->sub) ? (int) $decoded->sub : null;
         } catch (\Throwable $e) {
             return null;
@@ -91,11 +96,11 @@ class TransferService
 
     private function validateSufficientBalance(TransferInput $input): void
     {
-        $payer = \App\Model\User::find($input->payer);
+        $payer = $this->userRepository->find($input->payer);
         if (! $payer || ! $payer->wallet_id) {
             throw new \DomainException('Carteira do pagador não encontrada.');
         }
-        $payerWallet = \App\Model\Wallet::find($payer->wallet_id);
+        $payerWallet = $this->walletRepository->find($payer->wallet_id);
         if (! $payerWallet) {
             throw new \DomainException('Carteira do pagador não encontrada.');
         }
@@ -109,13 +114,8 @@ class TransferService
 
     private function createPendingTransfer(TransferInput $input): Transfer
     {
-        return Transfer::create([
-            'payer_id' => $input->payer,
-            'payee_id' => $input->payee,
-            'value' => $input->value,
-            'status' => 'pending',
-            'message' => null,
-        ]);
+        $transferData = TransferDTO::create($input);
+        return $this->repository->create($transferData);
     }
 
     private function isAuthorized(): bool
@@ -123,37 +123,47 @@ class TransferService
         return $this->authorizer && $this->authorizer->authorize();
     }
 
-    private function markTransferSuccess(Transfer $transferModel, TransferInput $input): void
+    private function markTransferSuccess(Transfer $transfer, TransferInput $input): void
     {
-        $payeeUser = \App\Model\User::find($input->payee);
+        $payeeUser = $this->userRepository->find($input->payee);
         $payeeName = $payeeUser ? $payeeUser->full_name : $input->payee;
-        $transferModel->status = 'success';
-        $transferModel->message = 'Transferência PIX de R$ {$input->value} para o usuário {$payeeName} ' .
-            'realizada com sucesso.';
-        $transferModel->save();
+        $transfer->status = 'success';
+        $transfer->message = 'Transferência PIX de R$' . number_format($input->value, 2, ',', '.') .
+            ' para o usuário ' . $payeeName . ' realizada com sucesso.';
+         $this->repository->update($transfer->id, [
+            'status' => $transfer->status,
+            'message' => $transfer->message,
+        ]);
     }
 
-    private function reverseTransfer(TransferInput $input, Transfer $transferModel): void
+    private function reverseTransfer(TransferInput $input, Transfer $transfer): void
     {
         $this->repository->rollback();
         $this->repository->beginTransaction();
-        $this->repository->transfer(new TransferInput([
+        $reverseInput = new TransferInput([
             'payer' => $input->payee,
             'payee' => $input->payer,
             'value' => $input->value,
-        ]));
-        $transferModel->status = 'reversed';
-        $transferModel->message = 'Transferência extornada: não autorizada pelo serviço externo.';
-        $transferModel->save();
+        ]);
+        $this->debitPayerWallet($reverseInput);
+        $this->creditPayeeWallet($reverseInput);
+        $transfer->status = 'reversed';
+        $transfer->message = 'Transferência extornada: não autorizada pelo serviço externo.';
+        $this->repository->update($transfer->id, [
+            'status' => $transfer->status,
+            'message' => $transfer->message,
+        ]);
         $this->repository->commit();
     }
 
-    private function markTransferFailed(Transfer $transferModel, string $msg): void
+    private function markTransferFailed(Transfer $transfer, string $msg): void
     {
-        $transferModel->status = 'failed';
-        $transferModel->message = $msg;
-        $transferModel->save();
-        $this->repository->commit();
+        $transfer->status = 'failed';
+        $transfer->message = $msg;
+        $this->repository->update($transfer->id, [
+            'status' => $transfer->status,
+            'message' => $transfer->message,
+        ]);
     }
 
     private function buildResponse(
@@ -188,31 +198,29 @@ class TransferService
 
     private function debitPayerWallet(TransferInput $input): void
     {
-        $payer = \App\Model\User::find($input->payer);
+        $payer = $this->userRepository->find($input->payer);
         if (! $payer || ! $payer->wallet_id) {
             throw new \DomainException('Carteira do pagador não encontrada.');
         }
-        $payerWallet = \App\Model\Wallet::find($payer->wallet_id);
+        $payerWallet = $this->walletRepository->find($payer->wallet_id);
         if (! $payerWallet) {
             throw new \DomainException('Carteira do pagador não encontrada.');
         }
         $value = (float) $input->value;
-        $payerWallet->balance = (float) $payerWallet->balance - $value;
-        $payerWallet->save();
+        $payerWallet->balance -= $value;
     }
 
     private function creditPayeeWallet(TransferInput $input): void
     {
-        $payee = \App\Model\User::find($input->payee);
+        $payee = $this->userRepository->find($input->payee);
         if (! $payee || ! $payee->wallet_id) {
             throw new \DomainException('Carteira do recebedor não encontrada.');
         }
-        $payeeWallet = \App\Model\Wallet::find($payee->wallet_id);
+        $payeeWallet = $this->walletRepository->find($payee->wallet_id);
         if (! $payeeWallet) {
             throw new \DomainException('Carteira do recebedor não encontrada.');
         }
         $value = (float) $input->value;
-        $payeeWallet->balance = (float) $payeeWallet->balance + $value;
-        $payeeWallet->save();
+        $payeeWallet->balance += $value;
     }
 }

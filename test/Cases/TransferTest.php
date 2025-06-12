@@ -7,7 +7,7 @@ namespace HyperfTest\Cases;
 use App\Domain\Transfer\UseCase\TransferUseCase;
 use App\Domain\Transfer\InputOutputData\TransferInput;
 use App\Infra\Transfer\Service\TransferService;
-use App\Domain\Transfer\Port\Out\TransferRepositoryInterface;
+use App\Infra\Transfer\Repository\TransferRepositoryInMemory;
 use App\Domain\Transfer\Port\Out\AuthorizerServiceInterface;
 use App\Domain\Transfer\Port\Out\NotificationServiceInterface;
 use Firebase\JWT\JWT;
@@ -16,6 +16,10 @@ use Psr\Http\Message\ServerRequestInterface;
 use Laminas\Diactoros\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use \App\Domain\Transfer\Entity\UserType;
+use App\Infra\User\Repository\UserRepositoryInMemory;
+use App\Infra\Wallet\Repository\WalletRepositoryInMemory;
+use App\Domain\User\Entity\User as DomainUser;
+use App\Domain\Wallet\Entity\Wallet as DomainWallet;
 
 class TransferTest extends TestCase
 {
@@ -53,21 +57,25 @@ class TransferTest extends TestCase
             'payee' => 2,
             'value' => 100.0
         ]);
-        // Gerar JWT válido para o payer
         $jwt = JWT::encode(['sub' => 1], getenv('JWT_SECRET') ?: 'secret', 'HS256');
         $request = (new ServerRequest())->withHeader('Authorization', 'Bearer ' . $jwt);
         Context::set(ServerRequestInterface::class, $request);
-        $mockRepo = $this->createMock(TransferRepositoryInterface::class);
-        $mockRepo->method('transfer');
-        $mockRepo->method('beginTransaction');
-        $mockRepo->method('commit');
-        $mockRepo->method('save');
-        $mockRepo->method('getBalance')->willReturn(900.0);
+        $users = [
+            1 => new DomainUser(1, 1, 'personal'),
+            2 => new DomainUser(2, 2, 'business'),
+        ];
+        $wallets = [
+            1 => new DomainWallet(1, 1000.0),
+            2 => new DomainWallet(2, 5000.0),
+        ];
+        $userRepo = new UserRepositoryInMemory($users);
+        $walletRepo = new WalletRepositoryInMemory($wallets);
+        $transferRepo = new TransferRepositoryInMemory();
         $mockAuthorizer = $this->createMock(AuthorizerServiceInterface::class);
         $mockAuthorizer->method('authorize')->willReturn(true);
         $mockNotifier = $this->createMock(NotificationServiceInterface::class);
         $mockNotifier->method('notify')->willReturn(true);
-        $service = new TransferService($mockRepo, $mockAuthorizer, $mockNotifier);
+        $service = new TransferService($transferRepo, $mockAuthorizer, $mockNotifier, $userRepo, $walletRepo);
         $result = $service->execute($input);
         $this->assertEquals('success', $result['status']);
         $this->assertTrue($result['transferred']);
@@ -81,22 +89,25 @@ class TransferTest extends TestCase
             'payee' => 2,
             'value' => 100.0
         ]);
-        // Gerar JWT válido para o payer
         $jwt = JWT::encode(['sub' => 1], getenv('JWT_SECRET') ?: 'secret', 'HS256');
         $request = (new ServerRequest())->withHeader('Authorization', 'Bearer ' . $jwt);
         Context::set(ServerRequestInterface::class, $request);
-        $mockRepo = $this->createMock(TransferRepositoryInterface::class);
-        $mockRepo->method('transfer');
-        $mockRepo->method('beginTransaction');
-        $mockRepo->method('commit');
-        $mockRepo->method('rollback');
-        $mockRepo->method('save');
-        $mockRepo->method('getBalance')->willReturn(900.0);
+        $users = [
+            1 => new DomainUser(1, 1, 'personal'),
+            2 => new DomainUser(2, 2, 'business'),
+        ];
+        $wallets = [
+            1 => new DomainWallet(1, 1000.0),
+            2 => new DomainWallet(2, 5000.0),
+        ];
+        $userRepo = new UserRepositoryInMemory($users);
+        $walletRepo = new WalletRepositoryInMemory($wallets);
+        $transferRepo = new TransferRepositoryInMemory();
         $mockAuthorizer = $this->createMock(AuthorizerServiceInterface::class);
         $mockAuthorizer->method('authorize')->willReturn(false);
         $mockNotifier = $this->createMock(NotificationServiceInterface::class);
         $mockNotifier->method('notify')->willReturn(true);
-        $service = new TransferService($mockRepo, $mockAuthorizer, $mockNotifier);
+        $service = new TransferService($transferRepo, $mockAuthorizer, $mockNotifier, $userRepo, $walletRepo);
         $result = $service->execute($input);
         $this->assertEquals('reversed', $result['status']);
         $this->assertFalse($result['notified']);

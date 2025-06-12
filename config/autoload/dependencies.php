@@ -9,8 +9,23 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+use App\Domain\User\Port\Out\UserRepositoryInterface;
+use App\Domain\Wallet\Port\Out\WalletRepositoryInterface;
+use App\Infra\User\Repository\UserRepositoryInDatabase;
+use App\Infra\Wallet\Repository\WalletRepositoryInDatabase;
+use App\Domain\Transfer\Port\Out\TransferRepositoryInterface;
+use App\Domain\Transfer\Port\Out\AuthorizerServiceInterface;
+use App\Infra\Transfer\Service\AuthorizerService;
+use App\Domain\Transfer\Port\Out\NotificationServiceInterface;
+use App\Infra\Transfer\Service\NotificationService;
+use App\Domain\Transfer\Port\Out\TransferModelInterface;
+use App\Infra\Transfer\Repository\TransferRepositoryInDatabase;
+
 return [
-    App\Domain\Transfer\Port\Out\TransferRepositoryInterface::class => App\Infra\Transfer\Repository\TransferRepository::class,
-    App\Domain\Transfer\Port\Out\AuthorizerServiceInterface::class => App\Infra\Transfer\Service\AuthorizerService::class,
-    App\Domain\Transfer\Port\Out\NotificationServiceInterface::class => App\Infra\Transfer\Service\NotificationService::class,
+    UserRepositoryInterface::class => UserRepositoryInDatabase::class,
+    WalletRepositoryInterface::class => WalletRepositoryInDatabase::class,
+    TransferRepositoryInterface::class => TransferRepositoryInDatabase::class,
+    AuthorizerServiceInterface::class => AuthorizerService::class,
+    NotificationServiceInterface::class => NotificationService::class,
+    TransferModelInterface::class => TransferRepositoryInDatabase::class,
 ];

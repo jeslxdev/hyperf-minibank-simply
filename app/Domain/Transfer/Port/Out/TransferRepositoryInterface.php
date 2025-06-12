@@ -2,8 +2,8 @@
 
 namespace App\Domain\Transfer\Port\Out;
 
-use App\Domain\Transfer\Entity\UserType;
 use App\Domain\Transfer\InputOutputData\TransferInput;
+use App\Domain\Transfer\Entity\Transfer;
 
 interface TransferRepositoryInterface
 {
@@ -12,6 +12,10 @@ interface TransferRepositoryInterface
     public function commit(): void;
     public function rollback(): void;
     public function transfer(TransferInput $input): void;
-    public function getUserType(int $userId): UserType;
+    public function getUserType(int $userId): string;
     public function getBalance(int $userId): float;
+    public function update(int $id, array $data): bool;
+    public function create(array $data): Transfer;
+    public function find(int $id): ?Transfer;
+    public function delete(int $id): bool;
 }

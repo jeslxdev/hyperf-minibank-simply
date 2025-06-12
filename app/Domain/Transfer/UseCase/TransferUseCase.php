@@ -6,7 +6,10 @@ use App\Domain\Transfer\InputOutputData\TransferInput;
 use App\Domain\Transfer\Port\Out\AuthorizerServiceInterface;
 use App\Domain\Transfer\Port\Out\NotificationServiceInterface;
 use App\Infra\Transfer\Service\TransferService;
-use App\Domain\Transfer\Entity\UserType;
+use App\Domain\Transfer\Enum\UserType;
+use App\Domain\User\Port\Out\UserRepositoryInterface;
+use App\Domain\Wallet\Port\Out\WalletRepositoryInterface;
+
 use App\Domain\Transfer\Port\Out\TransferRepositoryInterface;
 
 class TransferUseCase
@@ -15,7 +18,9 @@ class TransferUseCase
         private TransferService $transferService,
         private TransferRepositoryInterface $repository,
         private AuthorizerServiceInterface $authorizer,
-        private NotificationServiceInterface $notifier
+        private NotificationServiceInterface $notifier,
+        private UserRepositoryInterface $userRepository,
+        private WalletRepositoryInterface $walletRepository
     ) {
     }
 
@@ -29,6 +34,13 @@ class TransferUseCase
                 'message' => 'Lojistas não podem enviar transferências.',
             ];
         }
-        return $this->transferService->execute($input);
+        $transferService = new TransferService(
+            $this->repository,
+            $this->authorizer,
+            $this->notifier,
+            $this->userRepository,
+            $this->walletRepository
+        );
+        return $transferService->execute($input);
     }
 }

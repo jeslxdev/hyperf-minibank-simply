@@ -8,18 +8,30 @@ use App\Infra\Transfer\Validator\ValidatorFactory;
 class TransferDTO
 {
     #[Property]
+    public int $payer_id;
+    #[Property]
+    public int $payee_id;
+    #[Property]
     public float $value;
     #[Property]
-    public int $payer;
+    public string $status;
     #[Property]
-    public int $payee;
+    public ?string $message;
+    #[Property]
+    public string $created_at;
+    #[Property]
+    public string $updated_at;
 
     public function __construct(array $data)
     {
         $this->validationInputData($data);
+        $this->payer_id = $data['payer_id'];
+        $this->payee_id = $data['payee_id'];
         $this->value = $data['value'];
-        $this->payer = $data['payer'];
-        $this->payee = $data['payee'];
+        $this->status = $data['status'] ?? 'pending';
+        $this->message = $data['message'] ?? null;
+        $this->created_at = $data['created_at'] ?? date('Y-m-d H:i:s');
+        $this->updated_at = $data['updated_at'] ?? date('Y-m-d H:i:s');
     }
 
     public static function create(array $data): static
@@ -32,8 +44,12 @@ class TransferDTO
         $validator = ValidatorFactory::create($data);
         $validator->mapFieldsRules([
             'value' => ['required', 'numeric'],
-            'payer' => ['required', 'integer'],
-            'payee' => ['required', 'integer'],
+            'payer_id' => ['required', 'integer'],
+            'payee_id' => ['required', 'integer'],
+            'status' => ['string', 'in:pending,success,failed,reversed'],
+            'message' => ['nullable', 'string'],
+            'created_at' => ['date_format:Y-m-d H:i:s'],
+            'updated_at' => ['date_format:Y-m-d H:i:s'],
         ]);
     }
 }
