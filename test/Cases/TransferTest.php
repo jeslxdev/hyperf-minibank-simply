@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace HyperfTest\Cases;
 
-use App\Controller\Transfers\V1\TransferV1Controller;
 use App\Domain\Transfer\UseCase\TransferUseCase;
 use App\Domain\Transfer\InputOutputData\TransferInput;
 use App\Infra\Transfer\Service\TransferService;
@@ -16,6 +15,7 @@ use Hyperf\Context\Context;
 use Psr\Http\Message\ServerRequestInterface;
 use Laminas\Diactoros\ServerRequest;
 use PHPUnit\Framework\TestCase;
+use \App\Domain\Transfer\Entity\UserType;
 
 class TransferTest extends TestCase
 {
@@ -28,7 +28,7 @@ class TransferTest extends TestCase
         ]);
         $mockService = $this->createMock(TransferService::class);
         $mockRepo = $this->createMock(TransferRepositoryInterface::class);
-        $mockRepo->method('getUserType')->willReturn(\App\Domain\Transfer\Entity\UserType::PERSONAL);
+        $mockRepo->method('getUserType')->willReturn(UserType::PERSONAL);
         $mockAuthorizer = $this->createMock(AuthorizerServiceInterface::class);
         $mockNotifier = $this->createMock(NotificationServiceInterface::class);
         $mockService->method('execute')->willReturn([

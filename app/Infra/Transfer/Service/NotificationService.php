@@ -19,9 +19,10 @@ class NotificationService implements NotificationServiceInterface
                 $value = $payload['value'] ?? 0;
                 $smsMessage = "[SIMULADO] SMS enviado para {$payee}: Você recebeu uma transferência PIX de R$ " .
                     "{$value}.";
-                var_dump(value: $smsMessage);
+                var_dump($smsMessage);
                 return true;
             }
+            return false;
         } catch (\Throwable $e) {
             return false;
         }
