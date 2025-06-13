@@ -41,7 +41,7 @@ class TransferService
                 return $this->buildResponse(
                     'reversed',
                     403,
-                    'Transferência extornada: não autorizada pelo serviço externo.',
+                    'Transferência estornada: não autorizada pelo serviço externo.',
                     false,
                     false,
                     $input
@@ -64,7 +64,7 @@ class TransferService
             $this->repository->rollback();
             $msg = $this->formatErrorMessage($e->getMessage());
             if (isset($transferModel)) {
-                $this->markTransferFailed($transferModel, $msg);
+                $this->markTransferFailed($transferModel, $msg);                  
             }
             return $this->buildResponse('error', 500, $msg, false, false, $input);
         }
@@ -102,7 +102,6 @@ class TransferService
         $payerBalance = (float) $payerWallet->balance;
         $value = (float) $input->value;
         if ($payerBalance < $value) {
-            $this->repository->rollback();
             throw new \DomainException('Saldo insuficiente para realizar a transferência.');
         }
     }
@@ -128,8 +127,7 @@ class TransferService
         $payeeUser = \App\Model\User::find($input->payee);
         $payeeName = $payeeUser ? $payeeUser->full_name : $input->payee;
         $transferModel->status = 'success';
-        $transferModel->message = 'Transferência PIX de R$ {$input->value} para o usuário {$payeeName} ' .
-            'realizada com sucesso.';
+        $transferModel->message = 'Transferência PIX de R$ ' . number_format($input->value, 2, ',', '.') . ' para o usuário ' . $payeeName . ' realizada com sucesso.';
         $transferModel->save();
     }
 
@@ -143,7 +141,7 @@ class TransferService
             'value' => $input->value,
         ]));
         $transferModel->status = 'reversed';
-        $transferModel->message = 'Transferência extornada: não autorizada pelo serviço externo.';
+        $transferModel->message = 'Transferência estornada: não autorizada pelo serviço externo.';
         $transferModel->save();
         $this->repository->commit();
     }
