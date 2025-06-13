@@ -50,8 +50,16 @@ class TransferRepository implements TransferRepositoryInterface
     }
     public function getBalance(int $userId): float
     {
-        // Buscar saldo do usuário no banco
-        // Exemplo mock:
-        return 1000.0;
+        // Buscar o wallet_id do usuário
+        $walletId = \Hyperf\DbConnection\Db::table('users')->where('id', $userId)->value('wallet_id');
+        if (!$walletId) {
+            throw new \Exception('Usuário não encontrado ou sem carteira associada');
+        }
+        // Buscar o saldo na tabela wallet
+        $balance = \Hyperf\DbConnection\Db::table('wallet')->where('id', $walletId)->value('balance');
+        if ($balance === null) {
+            throw new \Exception('Carteira não encontrada');
+        }
+        return (float) $balance;
     }
 }
